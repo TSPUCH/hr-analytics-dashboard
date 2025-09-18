@@ -27,7 +27,6 @@
 #     finding and replacing patterns in text, which we use for cleaning
 #     our column names.
 #
-
 import pandas as pd
 import sqlite3
 from sqlalchemy import create_engine
@@ -37,9 +36,9 @@ import re
 # We put all our filenames and settings here at the top. This makes it
 # easy to change them later without having to hunt through the code.
 #
-CSV_FILE_PATH = 'WA_Fn-UseC_-HR-Employee-Attrition.csv' # The name of the raw data file.
-DB_FILE_PATH = 'hr_database.db'                         # The name of the database file we will create.
-TABLE_NAME = 'employees'                                # The name of the table inside our database.
+CSV_FILE_PATH = 'WA_Fn-UseC_-HR-Employee-Attrition.csv'     # The name of the raw data file.
+DB_FILE_PATH = 'hr_database.db'                             # The name of the database file we will create.
+TABLE_NAME = 'employees'                                    # The name of the table inside our database.
 
 # --- Step 3: Define a Helper Function for Cleaning ---
 # This function's job is to clean up the column names from the CSV file.
@@ -52,12 +51,12 @@ def clean_col_names(df):
     """
     # Get the current list of column names ↓
     cols = df.columns
-    # Create an empty list to hold the new, cleaned column names ↓
+    # Create an empty list to hold the new, cleaned column names
     new_cols = []
-    # Loop through each column name one by one ↓
+    # Loop through each column name one by one
     for col in cols:
         # Use a regular expression (re.sub) to remove any character that is NOT
-        # a number, a letter, or an underscore. ↓↓↓↓
+        # a number, a letter, or an underscore.
         new_col = re.sub(r'[^0-9a-zA-Z_]', '', col)
         # Check if the column name is not empty after cleaning ↓
         if new_col:
@@ -90,11 +89,20 @@ def setup_database():
         print("Data loaded successfully.")
 
         # --- Task 2: Add a Unique ID ---
+        # It's good practice for every row in a database table to have a unique ID.
         # We check if an 'EmployeeID' column already exists. If not, we create one.
         if 'EmployeeID' not in df.columns:
             # df.insert() adds a new column at a specific position.
             # We add it at the beginning (position 0).
             df.insert(0, 'EmployeeID', range(1, 1 + len(df)))
+        
+        # --- NEW DATA CLEANING STEP ---
+        # Here we handle missing values in the data itself before saving to the database.
+        # For 'YearsAtCompany', we will fill any missing values (NaN) with the median of the column.
+        if 'YearsAtCompany' in df.columns and df['YearsAtCompany'].isnull().any():
+            median_years = df['YearsAtCompany'].median()
+            df['YearsAtCompany'].fillna(median_years, inplace=True)
+            print(f"Missing 'YearsAtCompany' values filled with median value: {median_years}")
 
         # --- Task 3: Clean the Column Names ---
         # Here we call our helper function from Step 3 to clean up the column names.
@@ -144,4 +152,5 @@ def setup_database():
 #
 if __name__ == '__main__':
     setup_database()
+
 
